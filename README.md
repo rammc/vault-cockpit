@@ -591,4 +591,6 @@ python3 -m unittest discover -s tests
 
 ## License
 
-MIT
+[MIT](LICENSE). You may use, change and redistribute the code, also commercially,
+as long as the copyright notice and the license text stay with it. The software
+comes without any warranty.
