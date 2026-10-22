@@ -252,7 +252,7 @@ def builtin_check(cfg, paths):
                 problems.append(f"{r}: source does not exist: {s}")
         if stems is None:
             stems = {q.stem for q in cfg.path("wiki").rglob("*.md")}
-        for link in fm.links(body):
+        for link in (fm.links(body) if cfg["check_links"] else []):
             if link.startswith("attachments/"):
                 continue
             if link not in stems:

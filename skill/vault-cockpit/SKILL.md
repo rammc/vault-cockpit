@@ -10,7 +10,8 @@ register. The human answers and decides in the cockpit (`vault-cockpit serve`);
 you work the answers into the wiki. Format: `spec/FORMAT.md` in the
 vault-cockpit repo. The vault's own schema (e.g. `CLAUDE.md`) takes precedence.
 
-Run every command from the vault root, or pass `--vault <path>`.
+Run every command from the vault root, or pass `--vault <path>`. If `vault-cockpit` is not on the PATH, use the call the vault's schema names
+(for example a wrapper script) or `python3 -m vault_cockpit`.
 
 ## 1. Work through the inbox
 

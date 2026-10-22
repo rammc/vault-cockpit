@@ -19,7 +19,7 @@ application, technology), building blocks, then gaps, risks and governance.
 
 **Contents**
 
-- [Quick start](#quick-start) · [Installation prompt for Claude](#installation-prompt-for-claude)
+- [Quick start](#quick-start) · [What your vault needs](#what-your-vault-needs) · [Installation prompt for Claude](#installation-prompt-for-claude)
 - [1. Architecture vision](#1-architecture-vision)
 - [2. Architecture principles](#2-architecture-principles)
 - [3. Business architecture](#3-business-architecture)
@@ -51,6 +51,25 @@ uvx --from git+https://github.com/rammc/vault-cockpit vault-cockpit --vault ~/my
 4. Copy `skill/vault-cockpit/` into `~/.claude/skills/` so Claude Code can
    work through the inbox.
 
+### What your vault needs
+
+| Works with | Does not work with |
+|---|---|
+| A folder of Markdown files with YAML frontmatter (Obsidian, Foam, Dendron, plain folders) | Notion, Logseq databases, Roam, anything not stored as `.md` files |
+| Any folder layout: `Wiki/` + `RAW/` as in the LLM wiki pattern, or a flat vault (`"wiki": "."`) | |
+| English or German for generated text; any language for status words and field names (mapped in `cockpit.json`) | Generated sentences in other languages (contributions welcome in `texts.py`) |
+| macOS and Linux (tested), Windows (in CI) | Running the server on a network or shared machine (local only, see [SECURITY.md](SECURITY.md)) |
+
+Good to know before you start:
+
+- The cockpit writes `[[wiki links]]`. Tools that only understand `[text](page.md)`
+  show them as plain text.
+- By default every write is rejected if one of its `[[links]]` points to a page
+  that does not exist. Set `"check_links": false` if your vault links to pages
+  you have not written yet.
+- Git is optional. With `"git": {"commit": true}` every action becomes one commit.
+- Lint and index scripts are optional. Without them the cockpit runs its own checks.
+
 ### Installation prompt for Claude
 
 Instead of the steps above, you can let Claude Code set the cockpit up for
@@ -63,34 +82,53 @@ the current directory. Work in this order and stop where I need to confirm.
 1. Prerequisites: check python3 (3.9 or newer), git, and pipx or uv. Install
    the tool with `pipx install git+https://github.com/rammc/vault-cockpit`
    (or use uvx). Clone the repo to a temporary directory so you can read
-   spec/FORMAT.md, spec/cockpit.schema.json, examples/ and skill/.
+   README.md ("What your vault needs"), spec/FORMAT.md,
+   spec/cockpit.schema.json, examples/ and skill/.
 
-2. Read my vault before writing anything: the schema file (CLAUDE.md or
-   similar), the folder layout, where open questions are kept today, whether
-   there is a decision register, the language and the words used for status
-   values and fields, and any lint or index scripts. Summarise what you found.
+2. Read my vault before writing anything: the schema or instruction file
+   (CLAUDE.md, AGENTS.md or similar), the folder layout, how pages use
+   frontmatter and links, where open questions are kept today, whether there
+   is a decision register, the language, and any lint or index scripts.
+   Summarise what you found. If the vault does not fit "What your vault
+   needs" (for example no Markdown files, or only [text](page.md) links),
+   tell me what will not work and ask whether to continue.
 
-3. Draft cockpit.json for the vault root, mapping my paths, status words and
-   field names (see examples/german.cockpit.json for a German mapping).
-   Only configure commands.lint and commands.index if those scripts exist.
-   Set git.commit to true only if the vault is a git repository. Show me the
-   file and wait for my OK.
+3. Ask me, in one message, only the questions you could not answer from the
+   vault, and propose a default for each:
+   - Where should open items, the generated overview, the log, decisions and
+     the verbatim evidence (answers, decision statements) live?
+   - Do I already keep a list of open questions that should be migrated?
+   - Which words do I use for statuses (open, waiting, answered, discarded,
+     duplicate; proposed, valid, superseded, withdrawn) and for field names?
+   - Which language for the cockpit UI and for generated text (en or de)?
+   - Do I use domains or areas (for example work, personal) to group items?
+   - Who besides me can own an item?
+   - Should every action be a git commit?
+   - Should writes be rejected when a [[link]] points to a missing page?
+   - Which lint or index commands should run inside each transaction?
 
-4. Run `vault-cockpit migrate` (dry run) and show me how my current overview
-   page would split into item files. Run `migrate --write` only after I agree.
+4. Draft cockpit.json from my answers (schema: spec/cockpit.schema.json;
+   examples/german.cockpit.json shows a fully mapped German vault). Show me
+   the file and wait for my OK.
 
-5. Copy skill/vault-cockpit/ from the clone into ~/.claude/skills/.
+5. If I have an existing list, run `vault-cockpit migrate` (dry run) and show
+   me how it would split into item files. Run `migrate --write` only after I
+   agree. Otherwise create a first item with `vault-cockpit add` as a test.
 
-6. Propose a short section for my vault schema that says: open questions are
-   item files created with `vault-cockpit add`, the overview page is
-   generated and never edited by hand, answers and decisions are recorded
-   verbatim in RAW before the wiki changes, and only I change a decision's
+6. Copy skill/vault-cockpit/ from the clone into ~/.claude/skills/. If
+   `vault-cockpit` is not on my PATH, tell me how you will call it instead.
+
+7. Propose a short section for my vault's schema file that says: open
+   questions are item files created with `vault-cockpit add`, the overview
+   page is generated and never edited by hand, answers and decisions are
+   recorded verbatim before the wiki changes, and only I change a decision's
    status. Show the text and add it only after I agree.
 
-7. Start `vault-cockpit serve` and tell me the URL.
+8. Start `vault-cockpit serve` and tell me the URL. Explain in three
+   sentences how I answer an item and how you then pick it up.
 
-Rules: never change or delete existing files under RAW/. Do not commit or
-push anything I have not seen. If my vault does not fit the format, say
+Rules: never change or delete existing notes or evidence files. Do not commit
+or push anything I have not seen. If my vault does not fit the format, say
 where it differs instead of reshaping it on your own.
 ````
 
@@ -543,6 +581,7 @@ The most important ones:
 | `commands.lint`, `lint_mode`, `lint_ignore`, `commands.index` | Vault tools in the transaction |
 | `git.commit` | One commit per action |
 | `obsidian_vault` | Open wiki links in Obsidian |
+| `check_links`, `required_fields` | How strict the built-in page check is |
 
 ### Development
 

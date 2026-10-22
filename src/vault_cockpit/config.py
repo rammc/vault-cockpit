@@ -61,6 +61,7 @@ DEFAULTS = {
         "superseded_by": "superseded_by",
     },
     "required_fields": ["title", "type", "domain", "status", "updated", "sources"],
+    "check_links": True,
     "unconfirmed_trigger_marker": "",
     "commands": {
         "lint": [],

@@ -184,6 +184,10 @@
       },
       "additionalProperties": false
     },
+    "check_links": {
+      "type": "boolean",
+      "description": "Reject writes whose [[links]] point to pages that do not exist (default true)"
+    },
     "required_fields": {
       "type": "array",
       "items": {

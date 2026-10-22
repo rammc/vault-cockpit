@@ -390,5 +390,11 @@ class FlatVaultTest(unittest.TestCase):
         actions.create_item(self.cfg, "Which variety?", "", "", ["garden"])
         self.assertIn("## Open items", (self.vault / "Open.md").read_text())
 
+    def test_link_check_can_be_switched_off(self):
+        with self.assertRaises(CheckFailed):
+            actions.create_item(self.cfg, "Compost?", "", "", ["no-such-page"])
+        self.cfg.data["check_links"] = False
+        actions.create_item(self.cfg, "Compost?", "", "", ["no-such-page"])
+
 if __name__ == "__main__":
     unittest.main()
