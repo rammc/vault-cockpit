@@ -135,6 +135,8 @@ def plan(cfg, today=None):
     """Turn the current overview into item drafts, with suggestions. No writes."""
     today = today or store.today()
     t = T(cfg)
+    if not cfg.path("overview").exists():
+        return []  # nothing to migrate: a fresh vault starts with `add`
     src = cfg.path("overview").read_text(encoding="utf-8")
     m = re.search(r"(?:Stand|As of):?\s*(\d{4}-\d{2}-\d{2})", src)
     entries = parse_overview(src, m.group(1) if m else today)
@@ -215,7 +217,7 @@ def run(cfg, write=False):
         summary["by_suggestion"][k] = summary["by_suggestion"].get(k, 0) + 1
         summary["by_domain"][d["domain"]] = summary["by_domain"].get(d["domain"], 0) + 1
         summary["by_origin"][d["origin"]] = summary["by_origin"].get(d["origin"], 0) + 1
-    if not write:
+    if not write or not drafts:
         return summary, drafts
     items_dir = cfg.path("items")
     if items_dir.is_dir() and any(items_dir.glob("*.md")):

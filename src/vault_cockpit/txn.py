@@ -229,10 +229,13 @@ def builtin_check(cfg, paths):
     """Checks on the files this transaction touched."""
     problems = []
     wiki = cfg.path("wiki").resolve()
+    raw_dirs = {cfg.path("raw_answers").resolve(), cfg.path("raw_decisions").resolve()}
     stems = None
     for p in paths:
         if not p.exists() or wiki not in p.parents:
             continue
+        if raw_dirs & set(p.resolve().parents):
+            continue  # RAW evidence, even when it sits inside the wiki folder
         if p.resolve() == cfg.path("overview").resolve() or p.resolve() == cfg.path("log").resolve():
             continue
         text = p.read_text(encoding="utf-8")

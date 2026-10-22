@@ -362,5 +362,33 @@ class ServerTest(VaultCase):
         self.assertIn("broken link", json.loads(out)["problems"][0])
 
 
+
+class FlatVaultTest(unittest.TestCase):
+    """A plain Obsidian vault: no Wiki/ folder, no overview page, RAW evidence inside the vault, no git."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.vault = Path(self.tmp.name)
+        (self.vault / "Notes").mkdir()
+        (self.vault / "Notes/garden.md").write_text("---\ntitle: Garden\n---\n# Garden\n")
+        (self.vault / "cockpit.json").write_text(json.dumps({"paths": {
+            "wiki": ".", "items": "Open", "overview": "Open.md", "log": "log.md", "decisions": ["Decisions"],
+            "raw_answers": "Sources/answers", "raw_decisions": "Sources/decisions"}}))
+        self.cfg = config.load(self.vault)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_fresh_vault_flow(self):
+        summary, drafts = migrate.run(self.cfg, write=True)
+        self.assertEqual((summary["items"], drafts), (0, []))
+        r = actions.create_item(self.cfg, "When to plant tomatoes?", "", "", ["garden"])
+        actions.answer(self.cfg, r["id"], "Mid May.", "integrate")
+        d = actions.create_decision(self.cfg, "Grow tomatoes in pots", "tomatoes", "We grow them in pots.")
+        raw = sorted(p.name for p in (self.vault / "Sources/decisions").iterdir())
+        self.assertEqual(raw, [f"{d['decision']}.md"])
+        actions.create_item(self.cfg, "Which variety?", "", "", ["garden"])
+        self.assertIn("## Open items", (self.vault / "Open.md").read_text())
+
 if __name__ == "__main__":
     unittest.main()

@@ -83,7 +83,9 @@ def main(argv=None):
                 _print({"summary": summary, "items": drafts}, True)
             else:
                 _print(json.dumps(summary, ensure_ascii=False, indent=2), False)
-                if not args.write:
+                if not drafts:
+                    print(f"no overview page at {cfg['paths']['overview']}, nothing to migrate. Start with `add`.")
+                elif not args.write:
                     print("dry run, nothing written. Add --write to migrate.")
         elif args.cmd == "generate":
             with Transaction(cfg, "cockpit: regenerate overview") as tx:

@@ -56,7 +56,7 @@ def overview(cfg):
         rows = groups.get(dom)
         if not rows:
             continue
-        out += [f"## {dom.capitalize() if dom else '—'}", ""]
+        out += [f"## {dom.capitalize() if dom else t['no_domain']}", ""]
         out += table(rows, [id_col, item_col, ("col_pages", pages), ("col_since", lambda i: i["created"]),
                             ("col_owner", lambda i: i["owner"])])
         out.append("")

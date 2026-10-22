@@ -84,7 +84,8 @@ def raw_decision(tx, cfg, slug, title, statement, occasion=""):
     if occasion.strip():
         body += f"\n## {t['raw_occasion']}\n\n{occasion.strip()}\n"
     body += f"\n## {t['raw_statement']}\n\n{_quote_block(statement)}\n"
-    return tx.rel(tx.create(cfg.path("raw_decisions") / f"{today()}-{slug}.md", fm.render(data, body, set())))
+    name = slug if slug.startswith(f"{today()}-") else f"{today()}-{slug}"
+    return tx.rel(tx.create(cfg.path("raw_decisions") / f"{name}.md", fm.render(data, body, set())))
 
 
 def _update_item(tx, cfg, item_id, history_line, raw=None, **fields):
