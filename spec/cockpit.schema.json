@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vault-cockpit/config",
+  "title": "cockpit.json",
+  "type": "object",
+  "properties": {
+    "ui_language": {
+      "enum": [
+        "en",
+        "de"
+      ]
+    },
+    "vault_language": {
+      "enum": [
+        "en",
+        "de"
+      ]
+    },
+    "owner_default": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "id_prefix": {
+      "type": "string"
+    },
+    "types": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "channel": {
+      "type": "string"
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "default_domain": {
+      "type": "string"
+    },
+    "obsidian_vault": {
+      "type": "string"
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "wiki": {
+          "type": "string"
+        },
+        "items": {
+          "type": "string"
+        },
+        "overview": {
+          "type": "string"
+        },
+        "log": {
+          "type": "string"
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "glob patterns relative to the vault"
+        },
+        "raw_answers": {
+          "type": "string"
+        },
+        "raw_decisions": {
+          "type": "string"
+        }
+      }
+    },
+    "item_status": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "string"
+        },
+        "waiting": {
+          "type": "string"
+        },
+        "answered": {
+          "type": "string"
+        },
+        "discarded": {
+          "type": "string"
+        },
+        "duplicate": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "item_fields": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "string"
+        },
+        "due": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "pages": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "suggestion": {
+          "type": "string"
+        },
+        "suggestion_reason": {
+          "type": "string"
+        },
+        "integrate": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        },
+        "duplicate_of": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision_status": {
+      "type": "object",
+      "properties": {
+        "proposed": {
+          "type": "string"
+        },
+        "valid": {
+          "type": "string"
+        },
+        "superseded": {
+          "type": "string"
+        },
+        "withdrawn": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision_fields": {
+      "type": "object",
+      "properties": {
+        "decided_by": {
+          "type": "string"
+        },
+        "decided_on": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "supersedes": {
+          "type": "string"
+        },
+        "superseded_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "required_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unconfirmed_trigger_marker": {
+      "type": "string"
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "lint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lint_mode": {
+          "enum": [
+            "exit",
+            "no-regression"
+          ]
+        },
+        "lint_ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "index": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "overview": {
+      "type": "object",
+      "properties": {
+        "generate": {
+          "type": "boolean"
+        },
+        "closed_days": {
+          "type": "integer"
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

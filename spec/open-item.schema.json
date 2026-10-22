@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vault-cockpit/open-item",
+  "title": "Open item frontmatter (default field names)",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "type",
+    "domain",
+    "status",
+    "updated",
+    "sources"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z]+-\\d+$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "waiting",
+        "answered",
+        "discarded",
+        "duplicate"
+      ]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "due": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "origin": {
+      "type": "string"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "suggestion": {
+      "enum": [
+        "done",
+        "stale",
+        "duplicate",
+        null
+      ]
+    },
+    "suggestion_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "duplicate_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "integrate": {
+      "type": "boolean"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^RAW/"
+      }
+    }
+  }
+}

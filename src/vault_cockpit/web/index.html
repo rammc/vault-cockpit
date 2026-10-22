@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vault Cockpit</title>
+<style>
+:root{
+  --bg:#F4F4F1;--panel:#FFFFFF;--ink:#1C1F23;--ink2:#3D4249;--muted:#5B6068;--line:#D9DBDE;--line2:#EDEEEF;--field:#C9CCD1;
+  --accent:#2448B8;--accent-ink:#16307F;--accent-soft:#F2F5FD;--chip:#E3EAFB;
+  --amber:#E8A33D;--amber-soft:#FFF4E0;--amber-line:#E8C78A;--amber-ink:#7A3E00;
+  --green:#2E7D4F;--green-soft:#E3F3E9;--violet:#5B2A86;--violet-soft:#F1E7FA;--red:#A4262C;--red-soft:#FBE9EA;
+  --head:#1C1F23;--head-ink:#F4F4F1;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15171A;--panel:#1E2125;--ink:#ECEDEE;--ink2:#C5C8CC;--muted:#9AA0A6;--line:#30343A;--line2:#272B30;--field:#41464D;
+  --accent:#7D9BF0;--accent-ink:#A9BEF6;--accent-soft:#1F2840;--chip:#24304F;
+  --amber-soft:#33281A;--amber-line:#6B5226;--amber-ink:#F2C27A;
+  --green:#6CC392;--green-soft:#1C2E23;--violet:#C7A2EA;--violet-soft:#2C2238;--red:#F08A8F;--red-soft:#3A2224;
+  --head:#0E0F11;--head-ink:#ECEDEE;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45}
+a{color:var(--accent)}a:hover{color:var(--accent-ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+header{background:var(--head);color:var(--head-ink);padding:12px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;position:sticky;top:0;z-index:5}
+header .brand{font-weight:600;font-size:17px}
+header .vault{font-family:var(--mono);font-size:12px;opacity:.7}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav a{color:var(--head-ink);text-decoration:none;padding:7px 12px;border-radius:6px;font-size:14px}
+nav a.on{background:var(--bg);color:var(--ink);font-weight:500}
+nav .n{font-family:var(--mono);font-size:12px;margin-left:6px;opacity:.75}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+main{max-width:1376px;margin:0 auto;padding:24px 24px 48px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:24px;font-weight:600;line-height:1.3}
+h2{margin:0;font-size:18px;font-weight:600}
+.sub{color:var(--muted);font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.pad{padding:18px 20px}
+.label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mono{font-family:var(--mono)}
+.btn{background:var(--panel);border:1px solid var(--field);padding:8px 14px;border-radius:7px;font-size:14px;cursor:pointer;text-decoration:none;color:var(--ink);display:inline-block}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+.btn.primary:hover{background:var(--accent-ink)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto}
+.split{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.split>section{flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:16px}
+input[type=text],input[type=date],input[type=search],select,textarea{background:var(--panel);border:1px solid var(--field);border-radius:7px;padding:8px 10px;font-size:14px;max-width:100%}
+textarea{width:100%;resize:vertical;line-height:1.5;font-size:15px}
+input[type=text].wide{width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label{font-size:14px;font-weight:500}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-decoration:none;color:var(--ink);display:block}
+.tile.on{border:2px solid var(--accent);padding:13px 15px}
+.tile .v{font-family:var(--mono);font-size:24px;font-weight:500}
+.tile .k{font-size:14px;color:var(--ink2)}
+.tile.warn{background:var(--amber-soft);border-color:var(--amber-line)}
+.table{width:100%;border-collapse:collapse}
+.table th{text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line)}
+.table td{padding:11px 12px;border-bottom:1px solid var(--line2);vertical-align:top;font-size:14px}
+.table tr:last-child td{border-bottom:0}
+.table tr.click{cursor:pointer}
+.table tr.click:hover td{background:var(--accent-soft)}
+.scroll{overflow-x:auto}
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:2px 9px;border-radius:10px;background:var(--chip);color:var(--accent-ink);white-space:nowrap}
+.chip.amber{background:var(--amber-soft);color:var(--amber-ink)}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.violet{background:var(--violet-soft);color:var(--violet)}
+.chip.grey{background:var(--line2);color:var(--muted)}
+.chip.red{background:var(--red-soft);color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--field);background:var(--panel);border-radius:14px;padding:4px 12px;font-size:13px;cursor:pointer}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.hint{background:var(--amber-soft);border:1px solid var(--amber-line);border-radius:10px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.hint .label{color:var(--amber-ink)}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.choice{border:1px solid var(--field);border-radius:8px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;cursor:pointer}
+.choice.on{border:2px solid var(--accent);background:var(--accent-soft);padding:10px 11px}
+.choice input{margin-top:3px}
+.writes{background:var(--bg);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.writes .files{font-family:var(--mono);font-size:13px;line-height:1.7;word-break:break-all}
+.add{color:var(--green)}.chg{color:var(--accent)}.gen{color:var(--muted)}
+.text{white-space:pre-wrap;line-height:1.55}
+.wl{color:var(--accent);text-decoration:none;border-bottom:1px dotted currentColor}
+.history div{display:flex;gap:12px;font-size:14px}
+.history .d{font-family:var(--mono);color:var(--muted);width:92px;flex:none}
+.err{background:var(--red-soft);border:1px solid var(--red);color:var(--ink);border-radius:8px;padding:12px 14px;font-size:14px}
+.err pre{white-space:pre-wrap;font-size:12px;max-height:200px;overflow:auto;margin:8px 0 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:90vw}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.sec h3{margin:0 0 6px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sec+.sec{margin-top:14px}
+.muted{color:var(--muted)}
+.nowrap{white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:640px){header{padding:10px 16px}main{padding:16px}.hide-s{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" data-t="brand"></div>
+  <span class="vault" id="vaultname"></span>
+  <nav id="nav" aria-label="Sections"></nav>
+  <div class="right">
+    <a class="btn small" href="#/new" data-t="new"></a>
+    <button class="btn small" id="reload" type="button" data-t="reload"></button>
+    <button class="btn small" id="lang" type="button"></button>
+  </div>
+</header>
+<main id="app"><div class="empty">…</div></main>
+<script>
+"use strict";
+let TOKEN = "__COCKPIT_TOKEN__";
+const I18N = {
+  en: {
+    brand:"Vault Cockpit", new:"New", open:"Open", decisions:"Decisions", inbox:"Inbox for Claude", triage:"Triage",
+    search:"Search", all:"All", status:"Status", domain:"Domain", owner:"Owner", age:"Age",
+    any_age:"any age", older30:"older than 30 days", older90:"older than 90 days",
+    st_open:"open", st_waiting:"waiting", st_answered:"answered", st_discarded:"discarded", st_duplicate:"duplicate",
+    k_open:"open", k_due:"due today", k_sugg:"suggestions by Claude", k_hints:"decisions to review", k_inbox:"queued for Claude",
+    id:"ID", item:"Item", pages:"Pages", since:"Since", days:"d",
+    answer:"Answer", later:"Later", discard:"Discard", dup:"Duplicate", reopen:"Reopen",
+    back_list:"← Back to the list", back_reg:"← Back to the register",
+    context:"Context", origin:"From", history:"History", regarding:"Pages",
+    your_words:"Your words", stored_verbatim:"Stored verbatim as evidence.",
+    then:"What happens next",
+    then_integrate:"Claude works it in.", then_integrate_d:"Goes to the inbox; Claude updates the affected pages next session.",
+    then_wait:"Still open, follow up later.", then_wait_d:"Your answer becomes the current state; the item leaves the list until the date and Claude notes the state on the pages.",
+    k_waiting:"waiting", state:"State",
+    then_close:"Just close.", then_close_d:"Nothing to work in.",
+    then_decision:"Record as a decision.", then_decision_d:"Creates a register entry from your words.",
+    d_title:"Decision title", d_subject:"Subject key", d_subject_h:"one valid decision per subject",
+    writes:"Will be written", lint_note:"Checks run before saving. If they fail, nothing is written.",
+    save:"Save", cancel:"Cancel", saved:"Saved", failed:"Nothing was written",
+    until:"Waiting until", reason:"Reason (optional, stored as evidence)", other:"Duplicate of",
+    set_owner:"Set owner",
+    reg_title:"Decision register", reg_sub:"Sealed entries. Only a human changes their status.",
+    hints_banner:"{n} review hints: a “review when” trigger may have fired.",
+    dec:"Decision", subject:"Subject", decided:"Decided", review_when:"Review when", hints:"Hints",
+    ds_proposed:"proposed", ds_valid:"valid", ds_superseded:"superseded", ds_withdrawn:"withdrawn",
+    unconfirmed:"triggers not confirmed", superseded_by:"superseded by",
+    what_holds:"What holds?",
+    a_confirm:"Confirm", a_confirm_d:"status becomes valid",
+    a_keep:"Keep", a_keep_d:"acknowledge the hint",
+    a_supersede:"Supersede", a_supersede_d:"new version, old stays linked",
+    a_withdraw:"Withdraw", a_withdraw_d:"no successor",
+    new_title:"Title of the new version", confirm_triggers:"Also confirm the “review when” triggers",
+    review_hint:"Review hint", wording:"Decision (wording)",
+    tri_title:"Suggestions by Claude", tri_sub:"Claude proposes, you decide. Closed items are kept, never deleted.",
+    sg_done:"probably done", sg_stale:"stale", sg_duplicate:"duplicate",
+    claude_reason:"Claude’s reason", your_verdict:"Your verdict",
+    v_keep:"keep open", v_done:"close as done", v_stale:"close as stale", v_duplicate:"duplicate",
+    apply:"Apply {n}", select_all:"Select all",
+    inbox_title:"Inbox for Claude", inbox_sub:"Answers and decision drafts waiting to be worked into the wiki.",
+    inbox_how:"In Claude Code, ask: “Work through the vault cockpit inbox.” Claude reads the evidence, updates the pages and reports each entry with `vault-cockpit done <id>`.",
+    copy_prompt:"Copy prompt", copied:"Copied",
+    new_item:"New open item", new_decision:"New decision", title:"Title", text:"Text", pages_h:"Wiki page slugs, comma separated",
+    statement:"Statement (verbatim)", decided_by:"Decided by", create:"Create",
+    nothing:"Nothing here.", no_items:"No open items yet. Run `vault-cockpit migrate` or add one.",
+    due:"due", wait_until:"until {d}", suggestion:"suggestion",
+    new_raw:"+ new", change:"~ changes", gen:"⟳ generates", reload:"Refresh", refreshed:"Up to date",
+  },
+  de: {
+    brand:"Vault Cockpit", new:"Neu", open:"Offen", decisions:"Entscheidungen", inbox:"Inbox für Claude", triage:"Triage",
+    search:"Suchen", all:"Alle", status:"Status", domain:"Domäne", owner:"Owner", age:"Alter",
+    any_age:"jedes Alter", older30:"älter als 30 Tage", older90:"älter als 90 Tage",
+    st_open:"offen", st_waiting:"wartet", st_answered:"beantwortet", st_discarded:"verworfen", st_duplicate:"doppelt",
+    k_open:"offen", k_due:"heute fällig", k_sugg:"Vorschläge von Claude", k_hints:"Entscheidungen prüfen", k_inbox:"zum Einarbeiten",
+    id:"ID", item:"Punkt", pages:"Betrifft", since:"Seit", days:"T",
+    answer:"Antworten", later:"Später", discard:"Verwerfen", dup:"Doppelt", reopen:"Wieder öffnen",
+    back_list:"← Zurück zur Liste", back_reg:"← Zurück zum Register",
+    context:"Kontext", origin:"Entstanden aus", history:"Verlauf", regarding:"Betroffene Seiten",
+    your_words:"Ihr Wortlaut", stored_verbatim:"Wird unverändert als Beleg gespeichert.",
+    then:"Was danach passiert",
+    then_integrate:"Claude arbeitet ein.", then_integrate_d:"Der Punkt geht in die Inbox, Claude aktualisiert die betroffenen Seiten in der nächsten Sitzung.",
+    then_wait:"Bleibt offen, Wiedervorlage.", then_wait_d:"Ihre Antwort wird der aktuelle Stand; der Punkt verschwindet bis zum Datum aus der Liste, Claude trägt den Stand auf den Seiten nach.",
+    k_waiting:"wartet", state:"Stand",
+    then_close:"Nur schließen.", then_close_d:"Nichts einzuarbeiten.",
+    then_decision:"Als Entscheidung eintragen.", then_decision_d:"Legt aus Ihrem Wortlaut einen Registereintrag an.",
+    d_title:"Titel der Entscheidung", d_subject:"Gegenstand", d_subject_h:"pro Gegenstand gilt höchstens eine Entscheidung",
+    writes:"Wird geschrieben", lint_note:"Vor dem Speichern laufen die Prüfungen. Schlagen sie fehl, wird nichts geschrieben.",
+    save:"Speichern", cancel:"Abbrechen", saved:"Gespeichert", failed:"Nichts geschrieben",
+    until:"Wartet bis", reason:"Begründung (optional, wird als Beleg gespeichert)", other:"Doppelt zu",
+    set_owner:"Owner setzen",
+    reg_title:"Entscheidungsregister", reg_sub:"Versiegelte Einträge. Den Status ändert nur ein Mensch.",
+    hints_banner:"{n} Prüfhinweise: eine „Neu prüfen, wenn“-Bedingung könnte ausgelöst sein.",
+    dec:"Entscheidung", subject:"Gegenstand", decided:"Entschieden", review_when:"Neu prüfen, wenn", hints:"Hinweise",
+    ds_proposed:"vorgeschlagen", ds_valid:"gilt", ds_superseded:"ersetzt", ds_withdrawn:"zurückgenommen",
+    unconfirmed:"Auslöser unbestätigt", superseded_by:"ersetzt durch",
+    what_holds:"Was gilt?",
+    a_confirm:"Bestätigen", a_confirm_d:"Status wird „gilt“",
+    a_keep:"Offen lassen", a_keep_d:"Hinweis quittieren",
+    a_supersede:"Ersetzen", a_supersede_d:"neue Fassung, alte bleibt verlinkt",
+    a_withdraw:"Zurücknehmen", a_withdraw_d:"ohne Nachfolger",
+    new_title:"Titel der neuen Fassung", confirm_triggers:"„Neu prüfen, wenn“-Auslöser mit bestätigen",
+    review_hint:"Prüfhinweis", wording:"Entscheidung (Wortlaut)",
+    tri_title:"Vorschläge von Claude prüfen", tri_sub:"Claude schlägt vor, Sie entscheiden. Geschlossene Punkte bleiben erhalten, nichts wird gelöscht.",
+    sg_done:"vermutlich erledigt", sg_stale:"veraltet", sg_duplicate:"doppelt",
+    claude_reason:"Begründung von Claude", your_verdict:"Ihr Urteil",
+    v_keep:"offen lassen", v_done:"als erledigt schließen", v_stale:"als veraltet schließen", v_duplicate:"doppelt",
+    apply:"{n} übernehmen", select_all:"Alle auswählen",
+    inbox_title:"Inbox für Claude", inbox_sub:"Antworten und Entscheidungsentwürfe, die noch ins Wiki eingearbeitet werden.",
+    inbox_how:"In Claude Code sagen: „Arbeite die Cockpit-Inbox ab.“ Claude liest die Belege, aktualisiert die Seiten und meldet jeden Eintrag mit `vault-cockpit done <id>` zurück.",
+    copy_prompt:"Prompt kopieren", copied:"Kopiert",
+    new_item:"Neuer offener Punkt", new_decision:"Neue Entscheidung", title:"Titel", text:"Text", pages_h:"Wiki-Seiten (Slugs), durch Komma getrennt",
+    statement:"Aussage (wörtlich)", decided_by:"Entschieden von", create:"Anlegen",
+    nothing:"Nichts da.", no_items:"Noch keine offenen Punkte. `vault-cockpit migrate` ausführen oder einen anlegen.",
+    due:"fällig", wait_until:"bis {d}", suggestion:"Vorschlag",
+    new_raw:"+ neu", change:"~ ändert", gen:"⟳ erzeugt", reload:"Aktualisieren", refreshed:"Aktuell",
+  }
+};
+let S = null, LANG = "en";
+const UI = {filter:{q:"",status:"open",domain:"",owner:"",age:""}, decFilter:"", tri:{}};
+const $ = s => document.querySelector(s);
+const t = (k, v) => { let s = (I18N[LANG][k] ?? I18N.en[k] ?? k); if (v) for (const [a,b] of Object.entries(v)) s = s.replace("{"+a+"}", b); return s; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function wl(name, label){
+  const v = S.config.obsidian_vault;
+  const txt = esc(label || name);
+  if (!v) return `<span class="wl" title="${esc(name)}">${txt}</span>`;
+  return `<a class="wl" href="obsidian://open?vault=${encodeURIComponent(v)}&file=${encodeURIComponent(name)}">${txt}</a>`;
+}
+function md(s){
+  // escape first, then the few inline marks LLM wikis use
+  let h = esc(s);
+  h = h.replace(/\[\[([^\]|#]+)(?:[|#]([^\]]*))?\]\]/g, (_, a, b) => wl(a.trim(), b));
+  h = h.replace(/(^|\s)_([^_\n]+)_(?=\s|$|[.,;:])/g, "$1<em>$2</em>");
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, '<code class="mono">$1</code>');
+  return h;
+}
+const ageDays = d => d ? Math.max(0, Math.round((Date.parse(S.today) - Date.parse(d)) / 864e5)) : 0;
+const fmtDate = d => { if (!d) return ""; const [y,m,dd] = d.split("-"); return LANG==="de" ? `${dd}.${m}.${y}` : d; };
+const stChip = st => `<span class="chip ${({open:"",waiting:"amber",answered:"green",discarded:"grey",duplicate:"grey"})[st]||""}">${esc(t("st_"+st))}</span>`;
+const dsChip = st => `<span class="chip ${({proposed:"violet",valid:"green",superseded:"grey",withdrawn:"red"})[st]||"grey"}">${esc(t("ds_"+st))}</span>`;
+function toast(msg){ const d = document.createElement("div"); d.className="toast"; d.textContent=msg; document.body.appendChild(d); setTimeout(()=>d.remove(), 2600); }
+
+async function load(){
+  const r = await fetch("/api/state", {cache:"no-store"});
+  S = await r.json();
+  if (!localStorage.getItem("vc-lang")) LANG = S.config.ui_language in I18N ? S.config.ui_language : "en";
+}
+async function post(path, body, retried){
+  const r = await fetch("/api/" + path, {method:"POST", headers:{"Content-Type":"application/json","X-Cockpit-Token":TOKEN}, body:JSON.stringify(body||{})});
+  const j = await r.json().catch(() => ({error:r.statusText}));
+  if (r.status === 403 && j.error === "bad token" && !retried) {
+    // the server was restarted: pick up its new session token and try once more
+    const html = await (await fetch("/", {cache:"no-store"})).text();
+    const m = html.match(/let TOKEN = "([^"]+)"/);
+    if (m) { TOKEN = m[1]; return post(path, body, true); }
+  }
+  if (!r.ok) throw j;
+  return j;
+}
+function errBox(e){
+  const probs = (e.problems||[]).map(p => `<li>${esc(p)}</li>`).join("");
+  return `<div class="err"><strong>${esc(t("failed"))}.</strong> ${esc(e.error||"")}${probs?`<ul>${probs}</ul>`:""}${e.output?`<pre>${esc(e.output)}</pre>`:""}</div>`;
+}
+async function act(btn, path, body, then){
+  const box = btn.closest("form, .panel, section").querySelector(".errslot");
+  btn.disabled = true;
+  try {
+    const r = await post(path, body);
+    await load();
+    toast(t("saved") + (r.files ? ` · ${r.files.length} ${LANG==="de"?"Dateien":"files"}` : ""));
+    if (then) then(r); else render();
+  } catch(e) {
+    if (box) box.innerHTML = errBox(e); else alert(e.error);
+    btn.disabled = false;
+  }
+}
+
+function nav(route){
+  const items = S.items, open = items.filter(i=>i.status==="open"||i.status==="waiting");
+  const hints = S.decisions.filter(d=>d.hints.length).length;
+  const inbox = items.filter(i=>i.integrate).length + S.decisions.filter(d=>d.integrate).length;
+  const sugg = open.filter(i=>i.suggestion).length;
+  const L = [["#/", "open", open.length], ["#/decisions","decisions", hints||""], ["#/inbox","inbox", inbox||""], ["#/triage","triage", sugg||""]];
+  $("#nav").innerHTML = L.map(([h,k,n]) => `<a href="${h}" class="${route===k?"on":""}">${esc(t(k))}${n!==""?`<span class="n">${n}</span>`:""}</a>`).join("");
+  $("#vaultname").textContent = S.config.vault_name;
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+  $("#lang").textContent = LANG === "de" ? "EN" : "DE";
+  document.documentElement.lang = LANG;
+}
+
+// ---------- open items ----------
+function viewList(){
+  const F = UI.filter, items = S.items;
+  const domains = [...new Set(items.map(i=>i.domain).filter(Boolean))].sort();
+  const owners = [...new Set(items.map(i=>i.owner).filter(Boolean))].sort();
+  const live = items.filter(i=>i.status==="open"||i.status==="waiting");
+  const due = items.filter(i=>i.due_now);
+  const sugg = live.filter(i=>i.suggestion);
+  const hints = S.decisions.filter(d=>d.hints.length);
+  const inbox = items.filter(i=>i.integrate).length + S.decisions.filter(d=>d.integrate).length;
+  const q = F.q.trim().toLowerCase();
+  const rows = items.filter(i =>
+    (!F.status || (F.status==="due" ? i.due_now : F.status==="open" ? (i.status==="open" || i.due_now) : i.status===F.status)) &&
+    (!F.domain || i.domain===F.domain) && (!F.owner || i.owner===F.owner) &&
+    (!F.age || ageDays(i.created) > +F.age) &&
+    (!q || (i.id+" "+i.title+" "+i.text+" "+i.pages.join(" ")+" "+i.origin).toLowerCase().includes(q)));
+  const opt = (v, cur, label) => `<option value="${esc(v)}" ${v===cur?"selected":""}>${esc(label)}</option>`;
+  return `
+  <div class="row"><h1 class="grow">${esc(t("open"))}</h1></div>
+  <div class="tiles">
+    <a class="tile ${F.status==="open"?"on":""}" href="#/" data-fs="open"><div class="v">${live.filter(i=>i.status==="open"||i.due_now).length}</div><div class="k">${esc(t("k_open"))}</div></a>
+    <a class="tile ${due.length?"warn":""} ${F.status==="due"?"on":""}" href="#/" data-fs="due"><div class="v">${due.length}</div><div class="k">${esc(t("k_due"))}</div></a>
+    <a class="tile ${F.status==="waiting"?"on":""}" href="#/" data-fs="waiting"><div class="v">${live.filter(i=>i.status==="waiting"&&!i.due_now).length}</div><div class="k">${esc(t("k_waiting"))}</div></a>
+    <a class="tile" href="#/triage"><div class="v">${sugg.length}</div><div class="k">${esc(t("k_sugg"))}</div></a>
+    <a class="tile ${hints.length?"warn":""}" href="#/decisions"><div class="v">${hints.length}</div><div class="k">${esc(t("k_hints"))}</div></a>
+    <a class="tile" href="#/inbox"><div class="v">${inbox}</div><div class="k">${esc(t("k_inbox"))}</div></a>
+  </div>
+  <div class="panel pad row">
+    <input type="search" id="fq" placeholder="${esc(t("search"))}" value="${esc(F.q)}" class="grow" style="min-width:220px">
+    <select id="fstatus" aria-label="${esc(t("status"))}">${opt("",F.status,t("status")+": "+t("all"))}${["open","waiting","answered","discarded","duplicate"].map(s=>opt(s,F.status,t("st_"+s))).join("")}${opt("due",F.status,t("k_due"))}</select>
+    <select id="fdomain" aria-label="${esc(t("domain"))}">${opt("",F.domain,t("domain")+": "+t("all"))}${domains.map(d=>opt(d,F.domain,d)).join("")}</select>
+    <select id="fowner" aria-label="${esc(t("owner"))}">${opt("",F.owner,t("owner")+": "+t("all"))}${owners.map(d=>opt(d,F.owner,d)).join("")}</select>
+    <select id="fage" aria-label="${esc(t("age"))}">${opt("",F.age,t("any_age"))}${opt("30",F.age,t("older30"))}${opt("90",F.age,t("older90"))}</select>
+  </div>
+  <div class="panel scroll">${rows.length ? `<table class="table">
+    <thead><tr><th>${esc(t("id"))}</th><th>${esc(t("item"))}</th><th class="hide-s">${esc(t("pages"))}</th><th class="hide-s">${esc(t("domain"))}</th><th>${esc(t("since"))}</th><th class="hide-s">${esc(t("owner"))}</th><th></th></tr></thead>
+    <tbody>${rows.map(i => `<tr class="click" data-go="#/item/${esc(i.id)}">
+      <td class="mono nowrap">${esc(i.id)}</td>
+      <td><div>${esc(i.title)}</div>${i.last_answer&&(i.status==="open"||i.status==="waiting")?`<div class="sub" style="margin-top:2px">${esc(t("state"))} ${esc(fmtDate(i.last_answer.date))}: ${esc(firstLines(i.last_answer.text,140))}</div>`:""}<div class="row" style="gap:6px;margin-top:4px">${i.status!=="open"?stChip(i.status):""}${i.due_now?`<span class="chip amber">${esc(t("due"))}</span>`:i.status==="waiting"?`<span class="sub">${esc(t("wait_until",{d:fmtDate(i.due)}))}</span>`:""}${i.suggestion?`<span class="chip violet">${esc(t("suggestion"))}: ${esc(t("sg_"+i.suggestion))}</span>`:""}${i.decision?`<span class="chip amber">${esc(t("review_hint"))}</span>`:""}${i.integrate?`<span class="chip">${esc(t("k_inbox"))}</span>`:""}</div></td>
+      <td class="hide-s">${i.pages.slice(0,3).map(p=>wl(p)).join(", ")}${i.pages.length>3?` +${i.pages.length-3}`:""}</td>
+      <td class="hide-s">${esc(i.domain)}</td>
+      <td class="nowrap"><span class="mono">${ageDays(i.created)}</span> ${esc(t("days"))}</td>
+      <td class="hide-s">${esc(i.owner)}</td>
+      <td class="nowrap">${i.status==="open"||i.status==="waiting"?`<a class="btn small" href="#/item/${esc(i.id)}">${esc(t("answer"))}</a>`:""}</td>
+    </tr>`).join("")}</tbody></table>` : `<div class="empty">${md(items.length ? t("nothing") : t("no_items"))}</div>`}</div>`;
+}
+function bindList(){
+  const F = UI.filter;
+  const re = () => { const pos = $("#fq").selectionStart; render(); const q=$("#fq"); q.focus(); q.setSelectionRange(pos,pos); };
+  $("#fq").addEventListener("input", e => { F.q = e.target.value; re(); });
+  for (const [id,k] of [["#fstatus","status"],["#fdomain","domain"],["#fowner","owner"],["#fage","age"]])
+    $(id).addEventListener("change", e => { F[k] = e.target.value; render(); });
+  document.querySelectorAll("[data-fs]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); F.status = a.dataset.fs; render(); }));
+}
+
+function viewItem(id){
+  const i = S.items.find(x => x.id === id);
+  if (!i) return `<div class="empty">${esc(t("nothing"))}</div>`;
+  const live = i.status==="open" || i.status==="waiting";
+  const tab = UI.itemTab || "answer";
+  const tabs = ["answer","later","discard","dup"].map(k => `<button type="button" class="${tab===k?"on":""}" data-tab="${k}">${esc(t(k))}</button>`).join("");
+  return `
+  <a href="#/" style="font-size:14px;text-decoration:none">${esc(t("back_list"))}</a>
+  <div class="split">
+    <section>
+      <div class="row" style="gap:10px"><span class="mono sub">${esc(i.id)}</span>${stChip(i.status)}<span class="sub">${esc(i.domain)} · ${esc(t("since"))} ${esc(fmtDate(i.created))}</span></div>
+      <h1>${esc(i.title)}</h1>
+      <div class="panel pad" style="display:flex;flex-direction:column;gap:12px">
+        <div class="label">${esc(t("context"))}</div>
+        <div class="text">${md(i.text.split("\n").filter(l => !/^(Regarding|Betrifft):/.test(l)).join("\n").trim())}</div>
+        ${i.pages.length?`<div style="font-size:14px"><span class="muted">${esc(t("regarding"))}:</span> ${i.pages.map(p=>wl(p)).join(", ")}</div>`:""}
+        ${i.origin?`<div style="font-size:14px"><span class="muted">${esc(t("origin"))}:</span> ${esc(i.origin)}</div>`:""}
+        ${i.decision?`<div style="font-size:14px"><span class="muted">${esc(t("dec"))}:</span> <a href="#/decision/${esc(i.decision)}">${esc(i.decision)}</a></div>`:""}
+        ${i.sources.length?`<div style="font-size:13px" class="mono muted">${i.sources.map(esc).join("<br>")}</div>`:""}
+      </div>
+      ${i.last_answer?`<div class="panel pad" style="display:flex;flex-direction:column;gap:8px;border-color:var(--accent)"><div class="label">${esc(t("state"))} ${esc(fmtDate(i.last_answer.date))}</div><div class="text">${md(i.last_answer.text)}</div><div class="mono sub" style="font-size:12px">${esc(i.last_answer.path)}</div></div>`:""}
+      ${i.suggestion?`<div class="hint"><div class="label">${esc(t("suggestion"))}: ${esc(t("sg_"+i.suggestion))}</div><div>${md(i.suggestion_reason)}</div></div>`:""}
+      <div class="panel pad history" style="display:flex;flex-direction:column;gap:8px">
+        <div class="label">${esc(t("history"))}</div>
+        ${i.history.map(h => { const m = h.match(/^(\d{4}-\d{2}-\d{2})\s+(.*)$/); return `<div><span class="d">${esc(m?fmtDate(m[1]):"")}</span><span>${md(m?m[2]:h)}</span></div>`; }).join("")}
+      </div>
+    </section>
+    <section class="panel" style="padding:22px;gap:18px;border-color:var(--field)">
+      ${live ? `<div class="chips" role="tablist">${tabs}</div><div id="tabbody">${itemTab(i, tab)}</div>` :
+        `<h2>${stChip(i.status)}</h2><div><button class="btn" type="button" id="reopen">${esc(t("reopen"))}</button></div><div class="errslot"></div>`}
+      <div class="row" style="border-top:1px solid var(--line2);padding-top:14px">
+        <label for="own" class="sub">${esc(t("owner"))}</label>
+        <input type="text" id="own" list="owners" value="${esc(i.owner)}" style="width:180px">
+        <datalist id="owners">${[S.config.owner_default,...S.config.owners].map(o=>`<option value="${esc(o)}">`).join("")}</datalist>
+        <button class="btn small" type="button" id="setown">${esc(t("set_owner"))}</button>
+      </div>
+    </section>
+  </div>`;
+}
+function itemTab(i, tab){
+  const items = S.config.vault_name;
+  const raw = `<div><span class="add">${esc(t("new_raw"))}</span>  RAW/…/${esc(S.today)}-${esc(i.id.toLowerCase())}.md</div>`;
+  const chg = `<div><span class="chg">${esc(t("change"))}</span>  ${esc(i.path)}</div>`;
+  const tail = `<div><span class="chg">${esc(t("change"))}</span>  log</div><div><span class="gen">${esc(t("gen"))}</span>  overview</div>`;
+  const writes = (extra) => `<div class="writes"><div class="label">${esc(t("writes"))}</div><div class="files">${extra}</div><div style="font-size:13px" class="muted">${esc(t("lint_note"))}</div></div>`;
+  if (tab === "answer") {
+    const th = UI.then || "integrate";
+    const ch = (k) => `<label class="choice ${th===k?"on":""}"><input type="radio" name="then" value="${k}" ${th===k?"checked":""}><span><strong>${esc(t("then_"+k))}</strong> ${esc(t("then_"+k+"_d"))}</span></label>`;
+    return `<form id="f" style="display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label for="ans">${esc(t("your_words"))}</label><textarea id="ans" rows="5" required>${esc(UI.draft?.[i.id]||"")}</textarea><span class="sub">${esc(t("stored_verbatim"))}</span></div>
+      <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="field" style="font-size:14px;font-weight:500;margin-bottom:8px">${esc(t("then"))}</legend>${ch("integrate")}${ch("wait")}${ch("close")}${ch("decision")}</fieldset>
+      ${th==="wait"?`<div class="field"><label for="wdue">${esc(t("until"))}</label><input type="date" id="wdue" required value="${esc(i.due)}"></div>`:""}
+      ${th==="decision"?`<div class="field"><label for="dt">${esc(t("d_title"))}</label><input type="text" class="wide" id="dt" value="${esc(i.title)}"></div>
+      <div class="field"><label for="ds">${esc(t("d_subject"))}</label><input type="text" class="wide mono" id="ds" placeholder="${esc(t("d_subject_h"))}"></div>`:""}
+      ${writes(raw + chg + (th==="decision"?`<div><span class="add">${esc(t("new_raw"))}</span>  RAW/…/${esc(S.today)}-….md</div><div><span class="add">${esc(t("new_raw"))}</span>  …/${esc(S.today)}-….md</div>`:"") + tail)}
+      <div class="errslot"></div>
+      <div class="row"><button class="btn primary" type="submit">${esc(t("save"))}</button><a class="btn" href="#/">${esc(t("cancel"))}</a></div>
+    </form>`;
+  }
+  if (tab === "later") return `<form id="f" style="display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label for="due">${esc(t("until"))}</label><input type="date" id="due" required value="${esc(i.due)}"></div>
+      ${writes(chg + tail)}<div class="errslot"></div>
+      <div class="row"><button class="btn primary" type="submit">${esc(t("save"))}</button></div></form>`;
+  if (tab === "discard") return `<form id="f" style="display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label for="why">${esc(t("reason"))}</label><textarea id="why" rows="3"></textarea></div>
+      ${writes(raw + chg + tail)}<div class="errslot"></div>
+      <div class="row"><button class="btn primary" type="submit">${esc(t("discard"))}</button></div></form>`;
+  if (tab === "dup") return `<form id="f" style="display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label for="oth">${esc(t("other"))}</label><input type="text" id="oth" class="mono" list="ids" placeholder="${esc(S.config.vault_name ? "O-0001" : "")}"><datalist id="ids">${S.items.filter(x=>x.id!==i.id&&x.status==="open").map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("")}</datalist></div>
+      ${writes(chg + tail)}<div class="errslot"></div>
+      <div class="row"><button class="btn primary" type="submit">${esc(t("save"))}</button></div></form>`;
+}
+function bindItem(id){
+  const i = S.items.find(x => x.id === id); if (!i) return;
+  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { UI.itemTab = b.dataset.tab; render(); }));
+  document.querySelectorAll("input[name=then]").forEach(r => r.addEventListener("change", () => { UI.draft = {...UI.draft, [id]: $("#ans").value}; UI.then = r.value; render(); }));
+  $("#setown")?.addEventListener("click", e => act(e.target, `items/${id}/owner`, {owner: $("#own").value}));
+  $("#reopen")?.addEventListener("click", e => act(e.target, `items/${id}/reopen`, {}));
+  const f = $("#f"); if (!f) return;
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const btn = f.querySelector("button[type=submit]");
+    const tab = UI.itemTab || "answer";
+    const done = () => { UI.draft = {}; UI.then = null; location.hash = "#/"; };
+    if (tab === "answer") {
+      const th = UI.then || "integrate";
+      const body = {text: $("#ans").value, then: th};
+      if (th === "decision") body.decision = {title: $("#dt").value, subject: $("#ds").value, domain: i.domain};
+      if (th === "wait") body.due = $("#wdue").value;
+      act(btn, `items/${id}/answer`, body, r => r.decision ? (location.hash = "#/decision/" + r.decision) : done());
+    } else if (tab === "later") act(btn, `items/${id}/snooze`, {due: $("#due").value}, done);
+    else if (tab === "discard") act(btn, `items/${id}/discard`, {text: $("#why").value}, done);
+    else if (tab === "dup") act(btn, `items/${id}/duplicate`, {other: $("#oth").value.trim()}, done);
+  });
+}
+
+// ---------- decisions ----------
+function reviewText(d){ const s = d.sections.find(s => /review when|neu prüfen/i.test(s.heading)); return s ? s.text : ""; }
+function firstLines(s, n=180){ const x = s.replace(/\s+/g," ").replace(/^[-*]\s*/,""); return x.length>n ? x.slice(0,n-1)+"…" : x; }
+function viewDecisions(){
+  const D = S.decisions, f = UI.decFilter;
+  const hints = D.filter(d => d.hints.length);
+  const counts = s => D.filter(d => d.status === s).length;
+  const rows = D.filter(d => !f || (f==="hints" ? d.hints.length : d.status === f));
+  const chip = (k, label) => `<button type="button" class="${f===k?"on":""}" data-df="${k}">${esc(label)}</button>`;
+  return `
+  <div class="row"><div class="grow"><h1>${esc(t("reg_title"))}</h1><div class="sub">${esc(t("reg_sub"))}</div></div></div>
+  ${hints.length?`<div class="hint"><div>${esc(t("hints_banner",{n:hints.length}))}</div><div class="row">${hints.map(d=>`<a href="#/decision/${esc(d.slug)}">${esc(d.title)}</a>`).join(" · ")}</div></div>`:""}
+  <div class="chips">${chip("",t("all")+" "+D.length)}${chip("hints",t("hints")+" "+hints.length)}${["proposed","valid","superseded","withdrawn"].map(s=>chip(s,t("ds_"+s)+" "+counts(s))).join("")}</div>
+  <div class="panel scroll">${rows.length?`<table class="table">
+    <thead><tr><th>${esc(t("decided"))}</th><th>${esc(t("dec"))}</th><th>${esc(t("status"))}</th><th class="hide-s">${esc(t("review_when"))}</th><th>${esc(t("hints"))}</th></tr></thead>
+    <tbody>${rows.map(d=>`<tr class="click" data-go="#/decision/${esc(d.slug)}">
+      <td class="mono nowrap">${esc(fmtDate(d.decided_on))}</td>
+      <td><div>${esc(d.title)}</div><div class="sub mono" style="font-size:12px">${esc(d.subject)}</div>${d.superseded_by?`<div class="sub">${esc(t("superseded_by"))} <a href="#/decision/${esc(d.superseded_by)}">${esc(d.superseded_by)}</a></div>`:""}</td>
+      <td>${dsChip(d.status)}${d.unconfirmed_triggers?`<div style="margin-top:4px"><span class="chip amber">${esc(t("unconfirmed"))}</span></div>`:""}</td>
+      <td class="hide-s sub">${md(firstLines(reviewText(d)))}</td>
+      <td>${d.hints.length?`<span class="chip amber">${d.hints.length}</span>`:""}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">${esc(t("nothing"))}</div>`}</div>`;
+}
+function bindDecisions(){ document.querySelectorAll("[data-df]").forEach(b => b.addEventListener("click", () => { UI.decFilter = b.dataset.df; render(); })); }
+
+function viewDecision(slug){
+  const d = S.decisions.find(x => x.slug === slug);
+  if (!d) return `<div class="empty">${esc(t("nothing"))}</div>`;
+  const live = d.status === "proposed" || d.status === "valid";
+  const a = UI.decAct || (d.status === "proposed" ? "confirm" : d.hints.length ? "keep" : "supersede");
+  const opts = ["confirm","keep","supersede","withdraw"].filter(k => k !== "confirm" || d.status === "proposed" || d.unconfirmed_triggers);
+  const hintItems = d.hints.map(h => S.items.find(i => i.id === h.id)).filter(Boolean);
+  return `
+  <a href="#/decisions" style="font-size:14px;text-decoration:none">${esc(t("back_reg"))}</a>
+  <div class="split">
+    <section>
+      <div class="row">${dsChip(d.status)}${d.unconfirmed_triggers?`<span class="chip amber">${esc(t("unconfirmed"))}</span>`:""}<span class="mono sub" style="font-size:13px">${esc(d.subject)} · ${esc(fmtDate(d.decided_on))} · ${esc(d.decided_by)}</span></div>
+      <h1>${esc(d.title)}</h1>
+      <div class="panel pad">${d.sections.map(s=>`<div class="sec"><h3>${esc(s.heading)}</h3><div class="text">${md(s.text)}</div></div>`).join("")}</div>
+      ${hintItems.map(h=>`<div class="hint"><div class="label">${esc(t("review_hint"))} · <a href="#/item/${esc(h.id)}">${esc(h.id)}</a></div><div class="text">${md(h.text)}</div></div>`).join("")}
+      <div class="sub mono" style="font-size:12px">${esc(d.path)}<br>${d.sources.map(esc).join("<br>")}</div>
+    </section>
+    <section class="panel" style="padding:22px;gap:18px;border-color:var(--field)">
+      ${live?`<form id="f" style="display:flex;flex-direction:column;gap:16px">
+        <h2>${esc(t("what_holds"))}</h2>
+        <div class="choices">${opts.map(k=>`<label class="choice ${a===k?"on":""}"><input type="radio" name="da" value="${k}" ${a===k?"checked":""}><span><strong>${esc(t("a_"+k))}</strong><br>${esc(t("a_"+k+"_d"))}</span></label>`).join("")}</div>
+        ${a==="supersede"?`<div class="field"><label for="nt">${esc(t("new_title"))}</label><input type="text" id="nt" class="wide" value="${esc(d.title)}"></div>`:""}
+        <div class="field"><label for="dw">${esc(t("your_words"))}</label><textarea id="dw" rows="4" ${a==="supersede"||a==="withdraw"?"required":""}></textarea><span class="sub">${esc(t("stored_verbatim"))}</span></div>
+        ${d.unconfirmed_triggers?`<label class="row" style="font-size:14px"><input type="checkbox" id="ct" ${a==="confirm"?"checked":""}> ${esc(t("confirm_triggers"))}</label>`:""}
+        <div class="writes"><div class="label">${esc(t("writes"))}</div><div class="files">
+          <div><span class="add">${esc(t("new_raw"))}</span>  RAW/…/${esc(S.today)}-${esc(slug)}-${a}.md</div>
+          ${a==="supersede"?`<div><span class="add">${esc(t("new_raw"))}</span>  RAW/…/${esc(S.today)}-….md</div><div><span class="add">${esc(t("new_raw"))}</span>  …/${esc(S.today)}-….md  ${esc(t("ds_valid"))}</div>`:""}
+          <div><span class="chg">${esc(t("change"))}</span>  ${esc(d.path)}${a==="keep"?"":"  → "+esc(t("ds_"+({confirm:"valid",supersede:"superseded",withdraw:"withdrawn"})[a]))}</div>
+          ${hintItems.map(h=>`<div><span class="chg">${esc(t("change"))}</span>  ${esc(h.path)}  ${esc(t("st_answered"))}</div>`).join("")}
+          <div><span class="chg">${esc(t("change"))}</span>  log</div></div>
+          <div style="font-size:13px" class="muted">${esc(t("lint_note"))}</div></div>
+        <div class="errslot"></div>
+        <div class="row"><button class="btn primary" type="submit">${esc(t("a_"+a))}</button><a class="btn" href="#/decisions">${esc(t("cancel"))}</a></div>
+      </form>`:`<div>${dsChip(d.status)} ${d.superseded_by?`${esc(t("superseded_by"))} <a href="#/decision/${esc(d.superseded_by)}">${esc(d.superseded_by)}</a>`:""}</div>`}
+    </section>
+  </div>`;
+}
+function bindDecision(slug){
+  document.querySelectorAll("input[name=da]").forEach(r => r.addEventListener("change", () => { UI.decAct = r.value; render(); }));
+  const f = $("#f"); if (!f) return;
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const a = UI.decAct || f.querySelector("input[name=da]:checked").value;
+    act(f.querySelector("button[type=submit]"), `decisions/${slug}/${a}`,
+      {text: $("#dw").value, title: $("#nt")?.value || "", confirm_triggers: !!$("#ct")?.checked},
+      r => { UI.decAct = null; location.hash = "#/decision/" + (r.decision || slug); render(); });
+  });
+}
+
+// ---------- triage ----------
+function viewTriage(){
+  const rows = S.items.filter(i => i.suggestion && (i.status==="open"||i.status==="waiting"));
+  const by = k => rows.filter(i => i.suggestion === k).length;
+  const f = UI.triFilter || "";
+  const shown = rows.filter(i => !f || i.suggestion === f);
+  for (const i of rows) if (!UI.tri[i.id]) UI.tri[i.id] = {on: true, verdict: i.suggestion};
+  const sel = shown.filter(i => UI.tri[i.id].on);
+  const tile = (k) => `<a class="tile ${f===k?"on":""}" href="#/triage" data-tf="${k}"><div class="v">${k?by(k):rows.length}</div><div class="k">${esc(k?t("sg_"+k):t("all"))}</div></a>`;
+  const vopt = (i) => ["keep","done","stale","duplicate"].map(v=>`<option value="${v}" ${UI.tri[i.id].verdict===v?"selected":""}>${esc(t("v_"+v))}</option>`).join("");
+  return `
+  <div><h1>${esc(t("tri_title"))}</h1><div class="sub">${esc(t("tri_sub"))}</div></div>
+  <div class="tiles">${tile("")}${tile("done")}${tile("stale")}${tile("duplicate")}</div>
+  <div class="panel">
+    <div class="row pad" style="border-bottom:1px solid var(--line2)">
+      <label class="row" style="font-size:14px;font-weight:500"><input type="checkbox" id="tall" ${sel.length===shown.length&&shown.length?"checked":""}> ${esc(t("select_all"))}</label>
+      <span class="grow"></span><div class="errslot"></div>
+      <button class="btn primary" type="button" id="tapply" ${sel.length?"":"disabled"}>${esc(t("apply",{n:sel.length}))}</button>
+    </div>
+    <div class="scroll">${shown.length?`<table class="table"><thead><tr><th></th><th>${esc(t("id"))}</th><th>${esc(t("item"))}</th><th>${esc(t("claude_reason"))}</th><th>${esc(t("your_verdict"))}</th></tr></thead>
+    <tbody>${shown.map(i=>`<tr>
+      <td><input type="checkbox" data-ton="${esc(i.id)}" ${UI.tri[i.id].on?"checked":""} aria-label="${esc(i.id)}"></td>
+      <td class="mono nowrap"><a href="#/item/${esc(i.id)}">${esc(i.id)}</a></td>
+      <td>${esc(i.title)}</td>
+      <td class="sub">${md(i.suggestion_reason)}</td>
+      <td><select data-tv="${esc(i.id)}" aria-label="${esc(t("your_verdict"))} ${esc(i.id)}">${vopt(i)}</select></td></tr>`).join("")}</tbody></table>`:`<div class="empty">${esc(t("nothing"))}</div>`}</div>
+  </div>`;
+}
+function bindTriage(){
+  document.querySelectorAll("[data-tf]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); UI.triFilter = a.dataset.tf; render(); }));
+  document.querySelectorAll("[data-ton]").forEach(c => c.addEventListener("change", () => { UI.tri[c.dataset.ton].on = c.checked; render(); }));
+  document.querySelectorAll("[data-tv]").forEach(s => s.addEventListener("change", () => { UI.tri[s.dataset.tv].verdict = s.value; }));
+  $("#tall")?.addEventListener("change", e => { document.querySelectorAll("[data-ton]").forEach(c => UI.tri[c.dataset.ton].on = e.target.checked); render(); });
+  $("#tapply")?.addEventListener("click", e => {
+    const ids = [...document.querySelectorAll("[data-ton]")].map(c => c.dataset.ton).filter(id => UI.tri[id].on);
+    const verdicts = ids.map(id => { const it = S.items.find(i => i.id === id); return {id, verdict: UI.tri[id].verdict, other: it.duplicate_of}; });
+    act(e.target, "triage", {verdicts}, () => { UI.tri = {}; render(); });
+  });
+}
+
+// ---------- inbox ----------
+function viewInbox(){
+  const rows = S.items.filter(i => i.integrate).map(i => ({kind:"item", id:i.id, title:i.title, href:"#/item/"+i.id, path:i.path}))
+    .concat(S.decisions.filter(d => d.integrate).map(d => ({kind:"decision", id:d.slug, title:d.title, href:"#/decision/"+d.slug, path:d.path})));
+  const prompt = LANG==="de" ? "Arbeite die Cockpit-Inbox ab (vault-cockpit inbox)." : "Work through the vault cockpit inbox (vault-cockpit inbox).";
+  return `
+  <div><h1>${esc(t("inbox_title"))}</h1><div class="sub">${esc(t("inbox_sub"))}</div></div>
+  <div class="panel pad row"><div class="grow">${md(t("inbox_how"))}</div><button class="btn" type="button" id="copy" data-p="${esc(prompt)}">${esc(t("copy_prompt"))}</button></div>
+  <div class="panel scroll">${rows.length?`<table class="table"><tbody>${rows.map(r=>`<tr class="click" data-go="${esc(r.href)}">
+    <td class="mono nowrap">${esc(r.id)}</td><td>${r.kind==="decision"?`<span class="chip violet">${esc(t("dec"))}</span> `:""}${esc(r.title)}</td><td class="mono sub hide-s" style="font-size:12px">${esc(r.path)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">${esc(t("nothing"))}</div>`}</div>`;
+}
+function bindInbox(){ $("#copy")?.addEventListener("click", e => navigator.clipboard.writeText(e.target.dataset.p).then(() => toast(t("copied")))); }
+
+// ---------- new ----------
+function viewNew(){
+  const doms = S.config.domains;
+  const dsel = id => `<select id="${id}">${doms.map(d=>`<option>${esc(d)}</option>`).join("")}</select>`;
+  return `
+  <div class="split">
+    <section class="panel" style="padding:22px">
+      <form id="fi" style="display:flex;flex-direction:column;gap:14px">
+        <h2>${esc(t("new_item"))}</h2>
+        <div class="field"><label for="ni">${esc(t("title"))}</label><input type="text" class="wide" id="ni" required></div>
+        <div class="field"><label for="nx">${esc(t("text"))}</label><textarea id="nx" rows="4"></textarea></div>
+        <div class="field"><label for="np">${esc(t("pages_h"))}</label><input type="text" class="wide mono" id="np"></div>
+        ${doms.length?`<div class="field"><label for="nd">${esc(t("domain"))}</label>${dsel("nd")}</div>`:""}
+        <div class="errslot"></div>
+        <div class="row"><button class="btn primary" type="submit">${esc(t("create"))}</button></div>
+      </form>
+    </section>
+    <section class="panel" style="padding:22px">
+      <form id="fd" style="display:flex;flex-direction:column;gap:14px">
+        <h2>${esc(t("new_decision"))}</h2>
+        <div class="field"><label for="dt2">${esc(t("title"))}</label><input type="text" class="wide" id="dt2" required></div>
+        <div class="field"><label for="ds2">${esc(t("d_subject"))}</label><input type="text" class="wide mono" id="ds2" required placeholder="${esc(t("d_subject_h"))}"></div>
+        <div class="field"><label for="dw2">${esc(t("statement"))}</label><textarea id="dw2" rows="4" required></textarea><span class="sub">${esc(t("stored_verbatim"))}</span></div>
+        <div class="field"><label for="db2">${esc(t("decided_by"))}</label><input type="text" class="wide" id="db2"></div>
+        ${doms.length?`<div class="field"><label for="dd2">${esc(t("domain"))}</label>${dsel("dd2")}</div>`:""}
+        <div class="errslot"></div>
+        <div class="row"><button class="btn primary" type="submit">${esc(t("create"))}</button></div>
+      </form>
+    </section>
+  </div>`;
+}
+function bindNew(){
+  $("#fi").addEventListener("submit", e => { e.preventDefault();
+    act(e.target.querySelector("button"), "items", {title:$("#ni").value, text:$("#nx").value, domain:$("#nd")?.value||"",
+      pages:$("#np").value.split(",").map(s=>s.trim().replace(/^\[\[|\]\]$/g,"")).filter(Boolean)}, r => location.hash = "#/item/" + r.id); });
+  $("#fd").addEventListener("submit", e => { e.preventDefault();
+    act(e.target.querySelector("button"), "decisions", {title:$("#dt2").value, subject:$("#ds2").value, text:$("#dw2").value,
+      decided_by:$("#db2").value, domain:$("#dd2")?.value||""}, r => location.hash = "#/decision/" + r.decision); });
+}
+
+// ---------- router ----------
+function render(){
+  const h = location.hash.replace(/^#\/?/, "");
+  const [r, arg] = [h.split("/")[0], decodeURIComponent(h.split("/").slice(1).join("/"))];
+  const routes = {
+    "": ["open", viewList, bindList], item: ["open", () => viewItem(arg), () => bindItem(arg)],
+    decisions: ["decisions", viewDecisions, bindDecisions], decision: ["decisions", () => viewDecision(arg), () => bindDecision(arg)],
+    triage: ["triage", viewTriage, bindTriage], inbox: ["inbox", viewInbox, bindInbox], new: ["", viewNew, bindNew],
+  };
+  const [key, view, bind] = routes[r] || routes[""];
+  nav(key);
+  $("#app").innerHTML = view();
+  bind();
+  document.querySelectorAll("[data-go]").forEach(tr => tr.addEventListener("click", e => { if (!e.target.closest("a,button,input,select")) location.hash = tr.dataset.go; }));
+}
+window.addEventListener("hashchange", () => { UI.itemTab = null; UI.decAct = null; render(); window.scrollTo(0,0); });
+$("#reload").addEventListener("click", () => refresh(true));
+$("#lang").addEventListener("click", () => { LANG = LANG === "de" ? "en" : "de"; try { localStorage.setItem("vc-lang", LANG); } catch(e){} render(); });
+try { const l = localStorage.getItem("vc-lang"); if (l) LANG = l; } catch(e){}
+// pick up changes Claude made meanwhile (on focus, every 30 s, or via the button),
+// but never wipe what is being typed
+async function refresh(force){
+  const typing = [...document.querySelectorAll("#app textarea, #app input[type=text]")].some(x => x.value.trim() && x !== document.querySelector("#fq") && x.id !== "own");
+  if (typing && !force) return;
+  const before = JSON.stringify(S);
+  await load();
+  if (force || JSON.stringify(S) !== before) render();
+  if (force) toast(t("refreshed"));
+}
+window.addEventListener("focus", () => refresh(false));
+setInterval(() => { if (document.visibilityState === "visible") refresh(false); }, 30000);
+load().then(render).catch(e => { $("#app").innerHTML = `<div class="err">${esc(e)}</div>`; });
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vault-cockpit/decision",
+  "title": "Decision frontmatter (default field names)",
+  "type": "object",
+  "required": [
+    "title",
+    "type",
+    "domain",
+    "status",
+    "updated",
+    "sources",
+    "decided_by",
+    "decided_on",
+    "subject"
+  ],
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "proposed",
+        "valid",
+        "superseded",
+        "withdrawn"
+      ]
+    },
+    "decided_by": {
+      "type": "string"
+    },
+    "decided_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "superseded_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "integrate": {
+      "type": "boolean"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^RAW/"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "superseded"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "superseded_by"
+        ]
+      }
+    }
+  ]
+}

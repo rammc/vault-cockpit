@@ -1,0 +1,18 @@
+{
+  "ui_language": "en",
+  "vault_language": "en",
+  "owner_default": "me",
+  "owner_name": "Alex Example",
+  "owners": ["Sam (team lead)", "Platform team"],
+  "domains": ["work", "apps", "personal"],
+  "unconfirmed_trigger_marker": "not confirmed yet",
+  "paths": {
+    "wiki": "Wiki",
+    "items": "Wiki/open",
+    "overview": "Wiki/open.md",
+    "log": "Wiki/log.md",
+    "decisions": ["Wiki/*/decisions"],
+    "raw_answers": "RAW/chat",
+    "raw_decisions": "RAW/decisions"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "ui_language": "de",
+  "vault_language": "de",
+  "owner_default": "ich",
+  "owner_name": "Alex Beispiel",
+  "owners": [],
+  "domains": ["beruflich", "apps", "privat"],
+  "obsidian_vault": "Mein Vault",
+  "types": {"item": "offen", "decision": "entscheidung"},
+  "channel": "Vault Cockpit",
+  "paths": {
+    "wiki": "Wiki",
+    "items": "Wiki/offen",
+    "overview": "Wiki/offen.md",
+    "log": "Wiki/log.md",
+    "decisions": ["Wiki/*/entscheidungen"],
+    "raw_answers": "RAW/chat",
+    "raw_decisions": "RAW/entscheidungen"
+  },
+  "item_status": {
+    "open": "offen", "waiting": "wartet", "answered": "beantwortet", "discarded": "verworfen", "duplicate": "doppelt"
+  },
+  "item_fields": {
+    "created": "seit", "due": "wiedervorlage", "origin": "herkunft", "pages": "seiten", "owner": "owner",
+    "suggestion": "vorschlag", "suggestion_reason": "vorschlag_grund", "integrate": "einarbeiten",
+    "decision": "entscheidung", "duplicate_of": "doppelt_zu"
+  },
+  "decision_status": {
+    "proposed": "vorgeschlagen", "valid": "gilt", "superseded": "ersetzt", "withdrawn": "zurueckgenommen"
+  },
+  "decision_fields": {
+    "decided_by": "entschieden_von", "decided_on": "entschieden_am", "subject": "gegenstand",
+    "supersedes": "ersetzt", "superseded_by": "ersetzt_durch"
+  },
+  "unconfirmed_trigger_marker": "noch nicht bestätigt",
+  "commands": {
+    "lint": ["python3", "_tools/lint.py"],
+    "lint_mode": "no-regression",
+    "lint_ignore": ["Seiten", "Aktualität prüfen (Warnung)"],
+    "index": ["python3", "_tools/build_index.py"]
+  },
+  "git": {"commit": true}
+}

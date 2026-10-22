@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vault-cockpit"
+dynamic = ["version"]
+description = "A local cockpit for the open questions and decisions of an LLM-maintained wiki."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Christopher Ramm" }]
+dependencies = []
+keywords = ["llm", "wiki", "obsidian", "decision-register", "claude-code"]
+
+[project.urls]
+Repository = "https://github.com/rammc/vault-cockpit"
+Issues = "https://github.com/rammc/vault-cockpit/issues"
+
+[project.scripts]
+vault-cockpit = "vault_cockpit.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "vault_cockpit.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vault_cockpit = ["web/*.html"]
