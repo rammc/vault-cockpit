@@ -17,6 +17,17 @@ from vault_cockpit.txn import CheckFailed  # noqa: E402
 DEMO = ROOT / "examples" / "demo-vault"
 
 
+def _rmtree(path):
+    """shutil.rmtree that also removes read-only files (git objects on Windows)."""
+    import os
+    import stat
+
+    def onerror(func, p, _):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+    shutil.rmtree(path, onerror=onerror)
+
+
 def snapshot(root):
     return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()}
 
@@ -29,16 +40,16 @@ class VaultCase(unittest.TestCase):
         self.cfg = config.load(self.vault)
 
     def tearDown(self):
-        shutil.rmtree(self.tmp)
+        _rmtree(self.tmp)
 
     def reconfigure(self, **over):
-        data = json.loads((self.vault / "cockpit.json").read_text())
+        data = json.loads((self.vault / "cockpit.json").read_text(encoding="utf-8"))
         for k, v in over.items():
             if isinstance(v, dict):
                 data.setdefault(k, {}).update(v)
             else:
                 data[k] = v
-        (self.vault / "cockpit.json").write_text(json.dumps(data))
+        (self.vault / "cockpit.json").write_text(json.dumps(data), encoding="utf-8")
         self.cfg = config.load(self.vault)
 
     def item(self, i):
@@ -98,7 +109,7 @@ class MigrateTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 migrate.run(cfg, write=True)
         finally:
-            shutil.rmtree(tmp)
+            _rmtree(tmp)
 
 
 class ItemActionsTest(VaultCase):
@@ -110,12 +121,12 @@ class ItemActionsTest(VaultCase):
         raw = [f for f in r["files"] if f.startswith("RAW/chat/")]
         self.assertEqual(len(raw), 1)
         self.assertIn(raw[0], it["sources"])
-        raw_text = (self.vault / raw[0]).read_text()
+        raw_text = (self.vault / raw[0]).read_text(encoding="utf-8")
         self.assertIn("> Cards at launch, invoice in the second release.", raw_text)
         self.assertIn("## Question (O-0001)", raw_text)
-        self.assertIn(f"sources:\n  - {raw[0]}\n", (self.vault / "Wiki/open/O-0001.md").read_text())
-        self.assertIn("O-0001", (self.vault / "Wiki/log.md").read_text())
-        self.assertIn("Queued for Claude", (self.vault / "Wiki/open.md").read_text())
+        self.assertIn(f"sources:\n  - {raw[0]}\n", (self.vault / "Wiki/open/O-0001.md").read_text(encoding="utf-8"))
+        self.assertIn("O-0001", (self.vault / "Wiki/log.md").read_text(encoding="utf-8"))
+        self.assertIn("Queued for Claude", (self.vault / "Wiki/open.md").read_text(encoding="utf-8"))
         actions.integrated(self.cfg, "O-0001")
         self.assertFalse(self.item("O-0001")["integrate"])
 
@@ -149,7 +160,7 @@ class ItemActionsTest(VaultCase):
         self.assertEqual(self.item("O-0013")["duplicate_of"], "O-0004")
         actions.set_owner(self.cfg, "O-0004", "Sam (team lead)")
         self.assertEqual(self.item("O-0004")["owner"], "Sam (team lead)")
-        self.assertIn("[[O-0006]]", (self.vault / "Wiki/open.md").read_text())
+        self.assertIn("[[O-0006]]", (self.vault / "Wiki/open.md").read_text(encoding="utf-8"))
 
     def test_create_item(self):
         r = actions.create_item(self.cfg, "New question?", "Some text", "work", ["shop-relaunch"])
@@ -233,8 +244,8 @@ class TransactionTest(VaultCase):
         actions.answer(self.cfg, "O-0001", "Some answer")
 
     def test_index_command_output_is_not_checked_as_a_page(self):
-        (self.vault / "Wiki/index.md").write_text("# Index\n")
-        (self.vault / "idx.py").write_text("import pathlib\np=pathlib.Path('Wiki/index.md')\np.write_text(p.read_text()+'- x\\n')\n")
+        (self.vault / "Wiki/index.md").write_text("# Index\n", encoding="utf-8")
+        (self.vault / "idx.py").write_text("import pathlib\np=pathlib.Path('Wiki/index.md')\np.write_text(p.read_text(encoding='utf-8')+'- x\\n', encoding='utf-8')\n")
         self.reconfigure(commands={"index": [sys.executable, "idx.py"]})
         r = actions.answer(self.cfg, "O-0001", "Indexed answer", "close")
         self.assertIn("Wiki/index.md", r["files"])
@@ -251,14 +262,14 @@ class TransactionTest(VaultCase):
         with self.assertRaises(ValueError):
             with Transaction(self.cfg, "x") as tx:
                 tx.write(raw, "changed")
-        self.assertIn("Fictional sample", raw.read_text())
+        self.assertIn("Fictional sample", raw.read_text(encoding="utf-8"))
 
     def test_git_commit(self):
         import subprocess
         subprocess.run(["git", "init", "-q"], cwd=self.vault, check=True)
         subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"], cwd=self.vault, check=True)
         subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"], cwd=self.vault, check=True)
-        (self.vault / "unrelated.txt").write_text("not part of the commit")
+        (self.vault / "unrelated.txt").write_text("not part of the commit", encoding="utf-8")
         self.reconfigure(git={"commit": True})
         env_cfg = ["-c", "user.email=t@t", "-c", "user.name=t"]
         subprocess.run(["git"] + env_cfg + ["config", "user.email", "t@t"], cwd=self.vault, check=True)
@@ -279,7 +290,7 @@ class TransactionTest(VaultCase):
         subprocess.run(["git", "add", "-A"], cwd=self.vault, check=True)
         subprocess.run(["git", "commit", "-qm", "init"], cwd=self.vault, check=True)
         before = snapshot(self.vault / "Wiki")
-        (self.vault / ".git" / "index.lock").write_text("")  # another git process holds the index
+        (self.vault / ".git" / "index.lock").write_text("", encoding="utf-8")  # another git process holds the index
         with self.assertRaises(CheckFailed):
             actions.answer(self.cfg, "O-0001", "Blocked answer", "close")
         (self.vault / ".git" / "index.lock").unlink()
@@ -296,15 +307,15 @@ class GermanVaultTest(VaultCase):
                          decision_status={"proposed": "vorgeschlagen", "valid": "gilt", "superseded": "ersetzt"},
                          decision_fields={"subject": "gegenstand", "superseded_by": "ersetzt_durch", "supersedes": "ersetzt"})
         p = store.decision_path(self.cfg, "2026-05-20-sprint-demo")
-        p.write_text(p.read_text().replace("status: valid", "status: gilt").replace("subject:", "gegenstand:"))
+        p.write_text(p.read_text(encoding="utf-8").replace("status: valid", "status: gilt").replace("subject:", "gegenstand:"), encoding="utf-8")
         for f in (self.vault / "Wiki/open").glob("*.md"):
-            f.write_text(f.read_text().replace("status: open", "status: offen"))
+            f.write_text(f.read_text(encoding="utf-8").replace("status: open", "status: offen"), encoding="utf-8")
         actions.answer(self.cfg, "O-0001", "Antwort.", "close")
-        text = (self.vault / "Wiki/open/O-0001.md").read_text()
+        text = (self.vault / "Wiki/open/O-0001.md").read_text(encoding="utf-8")
         self.assertIn("status: beantwortet", text)
         self.assertIn("## History", text)  # existing heading kept
         self.assertIn("beantwortet (Beleg:", text)
-        raw = next((self.vault / "RAW/chat").glob("*o-0001.md")).read_text()
+        raw = next((self.vault / "RAW/chat").glob("*o-0001.md")).read_text(encoding="utf-8")
         self.assertIn("von: Alex Example", raw)
         self.assertIn("## Antwort (wörtlich)", raw)
         d = store.parse_decision(self.cfg, p)
@@ -367,17 +378,17 @@ class FlatVaultTest(unittest.TestCase):
     """A plain Obsidian vault: no Wiki/ folder, no overview page, RAW evidence inside the vault, no git."""
 
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.vault = Path(self.tmp.name)
+        self.tmp = Path(tempfile.mkdtemp())
+        self.vault = self.tmp
         (self.vault / "Notes").mkdir()
-        (self.vault / "Notes/garden.md").write_text("---\ntitle: Garden\n---\n# Garden\n")
+        (self.vault / "Notes/garden.md").write_text("---\ntitle: Garden\n---\n# Garden\n", encoding="utf-8")
         (self.vault / "cockpit.json").write_text(json.dumps({"paths": {
             "wiki": ".", "items": "Open", "overview": "Open.md", "log": "log.md", "decisions": ["Decisions"],
-            "raw_answers": "Sources/answers", "raw_decisions": "Sources/decisions"}}))
+            "raw_answers": "Sources/answers", "raw_decisions": "Sources/decisions"}}), encoding="utf-8")
         self.cfg = config.load(self.vault)
 
     def tearDown(self):
-        self.tmp.cleanup()
+        _rmtree(self.tmp)
 
     def test_fresh_vault_flow(self):
         summary, drafts = migrate.run(self.cfg, write=True)
@@ -388,7 +399,7 @@ class FlatVaultTest(unittest.TestCase):
         raw = sorted(p.name for p in (self.vault / "Sources/decisions").iterdir())
         self.assertEqual(raw, [f"{d['decision']}.md"])
         actions.create_item(self.cfg, "Which variety?", "", "", ["garden"])
-        self.assertIn("## Open items", (self.vault / "Open.md").read_text())
+        self.assertIn("## Open items", (self.vault / "Open.md").read_text(encoding="utf-8"))
 
     def test_link_check_can_be_switched_off(self):
         with self.assertRaises(CheckFailed):

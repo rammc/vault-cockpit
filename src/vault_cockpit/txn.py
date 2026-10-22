@@ -73,7 +73,7 @@ class Transaction:
             raise ValueError(f"outside the vault: {path}")
         raw = self.cfg.vault / "RAW"
         if raw in path.parents and path.exists() and path not in self.before:
-            raise ValueError(f"RAW is immutable: {path.relative_to(self.cfg.vault)}")
+            raise ValueError(f"RAW is immutable: {path.relative_to(self.cfg.vault).as_posix()}")
         return path
 
     def _remember(self, path):
@@ -104,7 +104,7 @@ class Transaction:
         return self.write(path, cur + text)
 
     def rel(self, path):
-        return str(path.resolve().relative_to(self.cfg.vault))
+        return path.resolve().relative_to(self.cfg.vault).as_posix()
 
     # -- lifecycle ---------------------------------------------------------
     def __enter__(self):
@@ -193,7 +193,7 @@ def _snapshot(cfg):
 
 
 def run(cfg, cmd):
-    r = subprocess.run(cmd, cwd=cfg.vault, capture_output=True, text=True, timeout=120)
+    r = subprocess.run(cmd, cwd=cfg.vault, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     return r.returncode, (r.stdout + r.stderr)
 
 
@@ -240,7 +240,7 @@ def builtin_check(cfg, paths):
             continue
         text = p.read_text(encoding="utf-8")
         data, body = fm.parse(text)
-        r = str(p.relative_to(cfg.vault))
+        r = p.relative_to(cfg.vault).as_posix()
         if not data:
             problems.append(f"{r}: no frontmatter")
             continue
@@ -275,11 +275,11 @@ def git_commit(cfg, paths, message, attempts=5):
     on failure the paths are unstaged again so the rollback leaves the index clean."""
     if not (cfg.vault / ".git").exists():
         return
-    rels = [str(p.resolve().relative_to(cfg.vault)) for p in paths]
+    rels = [p.resolve().relative_to(cfg.vault).as_posix() for p in paths]
     for i in range(attempts):
-        add = subprocess.run(["git", "add", "-A", "--"] + rels, cwd=cfg.vault, capture_output=True, text=True)
+        add = subprocess.run(["git", "add", "-A", "--"] + rels, cwd=cfg.vault, capture_output=True, text=True, encoding="utf-8", errors="replace")
         res = add if add.returncode else subprocess.run(
-            ["git", "commit", "-q", "-m", message, "--"] + rels, cwd=cfg.vault, capture_output=True, text=True)
+            ["git", "commit", "-q", "-m", message, "--"] + rels, cwd=cfg.vault, capture_output=True, text=True, encoding="utf-8", errors="replace")
         if res.returncode == 0:
             return
         if "index.lock" not in (res.stderr or "") or i == attempts - 1:

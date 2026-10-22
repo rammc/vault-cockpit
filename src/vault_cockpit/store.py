@@ -13,7 +13,7 @@ def today():
 
 
 def rel(cfg, p):
-    return str(p.relative_to(cfg.vault))
+    return p.relative_to(cfg.vault).as_posix()
 
 
 def _as_list(v):
